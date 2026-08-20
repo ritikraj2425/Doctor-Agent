@@ -1,0 +1,4 @@
+langchain
+pydantic
+fastapi
+uvicorn
