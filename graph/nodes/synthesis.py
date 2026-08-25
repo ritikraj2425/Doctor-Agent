@@ -1,3 +1,5 @@
+import json
+
 from google.genai import types
 
 from graph.state import DoctorAgentState
@@ -14,32 +16,54 @@ class SynthesisNode:
         state: DoctorAgentState,
     ) -> dict:
 
+        structured_prompt = state.get(
+            "structured_prompt",
+            "",
+        )
+
+        web_results = state.get(
+            "web_results",
+            [],
+        )
+
+        book_results = state.get(
+            "book_results",
+            [],
+        )
+
         prompt = f"""
 You are the final medical research synthesis system.
 
-Analyze the user's request using BOTH research sources.
+Analyze the user's request using BOTH independent research sources.
 
 USER CONTEXT:
-{state["structured_prompt"]}
+{structured_prompt}
 
 WEB RESEARCH:
-{state.get("web_results", [])}
+{json.dumps(web_results, ensure_ascii=False, indent=2)}
 
 BOOK RESEARCH:
-{state.get("book_results", [])}
+{json.dumps(book_results, ensure_ascii=False, indent=2)}
 
 Your task:
 
 1. Identify the most likely disease or medical condition discussed.
 2. Explain the evidence supporting that interpretation.
-3. Summarize relevant information from the medical book.
-4. Summarize relevant information from trusted web sources.
-5. Provide potential treatment/management information when supported
-   by the evidence.
+3. Summarize the relevant information retrieved from the medical book.
+4. Summarize the relevant information retrieved from trusted web sources.
+5. Provide treatment or management information only when supported by
+   the available evidence.
 6. Clearly distinguish evidence from uncertainty.
 7. Do not invent facts.
 8. Do not claim certainty when the evidence is insufficient.
-9. Recommend appropriate professional medical evaluation where applicable.
+9. Preserve source provenance whenever possible.
+10. Recommend appropriate professional medical evaluation where applicable.
+
+Important:
+- The book research and web research are independent evidence sources.
+- Do not assume that either source is automatically correct.
+- Do not fabricate citations or sources.
+- If the evidence is insufficient to identify a condition, explicitly say so.
 
 Return a clear medical research response.
 """
@@ -53,5 +77,5 @@ Return a clear medical research response.
         )
 
         return {
-            "final_response": response.text or ""
+            "final_response": response.text or "",
         }

@@ -1,4 +1,5 @@
 from langgraph.graph import StateGraph, START, END
+from langgraph.types import Send
 
 from graph.state import DoctorAgentState
 from graph.nodes.process_input import ProcessInputNode
@@ -7,21 +8,26 @@ from graph.nodes.book_research import BookResearchNode
 from graph.nodes.web_research import WebResearchNode
 from graph.nodes.synthesis import SynthesisNode
 
-def route_after_context(
-    state: DoctorAgentState,
-):
-    if not state.get("is_medical", False):
+
+def route_after_context(state: DoctorAgentState):
+
+    is_medical = state.get("is_medical", False)
+
+    if is_medical is False:
         return END
 
-    return ["web_research", "book_research"]
+    return [
+        Send("web_research", state),
+        Send("book_research", state),
+    ]
 
-    
+
 def create_graph(
     process_input_node: ProcessInputNode,
     understand_context_node: UnderstandContextNode,
     book_research_node: BookResearchNode,
     web_research_node: WebResearchNode,
-    synthesis_node: SynthesisNode
+    synthesis_node: SynthesisNode,
 ):
 
     builder = StateGraph(DoctorAgentState)
@@ -51,7 +57,10 @@ def create_graph(
         synthesis_node,
     )
 
-    builder.add_edge(START, "process_input")
+    builder.add_edge(
+        START,
+        "process_input",
+    )
 
     builder.add_edge(
         "process_input",

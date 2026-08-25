@@ -20,7 +20,6 @@ class ContextProvider:
                 prompt=prompt,
                 file_type=file_type,
             )
-
             return context
 
         finally:

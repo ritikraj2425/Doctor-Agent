@@ -38,6 +38,13 @@ Rules:
 - Do not verify whether claims are true.
 - Do not omit relevant context.
 - Convert poorly structured voice transcription into coherent context.
+
+If the request is NOT medical:
+- set is_medical=false
+- set structured_prompt=""
+- set response="This system only handles medical-related questions."
+- DO NOT answer the user's original question.
+
 """
 
         text_input = f"""
