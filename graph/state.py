@@ -18,9 +18,24 @@ class DoctorAgentState(TypedDict, total=False):
     structured_prompt: str
     response: str | None
 
+    # Triage
+    triage: dict
+    is_emergency: bool
+    urgency_level: str
+
     # Research branches
     web_results: list[dict]
     book_results: list[dict]
 
-    # Final
+    # Clinical Analysis
+    differential: dict
+    possible_causes: list[dict]
+
+    # Medication Verification
+    medication_check: dict
+    medicines: list[dict]
+
+    # Safety & Final Output
+    safety_review: dict
+    final_structured_response: dict
     final_response: str

@@ -68,8 +68,7 @@ User's input:
 
             contents.append(pdf_part)
 
-        response = await self.gemini_client.client.aio.models.generate_content(
-            model="gemini-3.7-flash",
+        response = await self.gemini_client.generate_content(
             contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
