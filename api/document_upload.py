@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from uuid import uuid4
@@ -102,12 +103,46 @@ async def stream_consultation(
         yield "event: status\ndata: " + json.dumps({"status": "started", "chat_id": chat_id}) + "\n\n"
         state = {}
         active_node = "starting"
+
+        async def graph_events_with_keepalive(graph_input):
+            queue = asyncio.Queue()
+
+            async def produce():
+                try:
+                    async for graph_event in doctor_graph.astream_events(graph_input, version="v2"):
+                        await queue.put(("event", graph_event))
+                except Exception as exc:
+                    await queue.put(("error", exc))
+                finally:
+                    await queue.put(("done", None))
+
+            producer = asyncio.create_task(produce())
+            try:
+                while True:
+                    try:
+                        kind, value = await asyncio.wait_for(queue.get(), timeout=15)
+                    except asyncio.TimeoutError:
+                        yield None
+                        continue
+                    if kind == "done":
+                        break
+                    if kind == "error":
+                        raise value
+                    yield value
+            finally:
+                if not producer.done():
+                    producer.cancel()
+
         try:
             graph_input = {
                 "file": file, "audio_file": audio_file, "prompt": prompt,
                 "chat_id": chat_id, "prompt_type": prompt_type,
             }
-            async for event in doctor_graph.astream_events(graph_input, version="v2"):
+            async for event in graph_events_with_keepalive(graph_input):
+                if event is None:
+                    # Keep Vercel and intermediary connections alive while a node awaits a provider.
+                    yield ": keep-alive\n\n"
+                    continue
                 node = event.get("metadata", {}).get("langgraph_node")
                 kind = event.get("event")
                 if not node or event.get("name") != node:
