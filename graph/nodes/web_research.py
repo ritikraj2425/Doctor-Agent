@@ -1,3 +1,4 @@
+import logging
 from graph.state import DoctorAgentState
 from providers.web.search import TavilyWebSearchProvider
 
@@ -12,9 +13,16 @@ class WebResearchNode:
         state: DoctorAgentState,
     ) -> dict:
 
-        results = await self.search_provider.search(
-            state["structured_prompt"]
-        )
+        try:
+            results = await self.search_provider.search(state["structured_prompt"])
+        except Exception:
+            logging.getLogger(__name__).exception("Web research failed")
+            return {"web_results": [], "web_research_error": "Web search is temporarily unavailable."}
+
+        if isinstance(results, dict):
+            results = results.get("results", [])
+        elif not isinstance(results, list):
+            results = []
 
         return {
             "web_results": results,

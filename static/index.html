@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0b10"><title>Clarity — AI health companion</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20261116">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css?v=20261115-run-close">
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <div class="brand"><div class="brand-mark">✳</div><span>clarity</span><button class="icon-button mobile-close" id="closeSidebar" aria-label="Close menu">×</button></div>
+  <button class="new-chat" id="newChat"><span>＋</span> New consultation <kbd>⌘ K</kbd></button>
+  <div class="side-label">YOUR HISTORY</div><nav id="chatHistory" class="chat-history"></nav>
+  <div class="sidebar-bottom"><div class="privacy-note"><span class="lock-dot"></span><span>Your health conversations are private</span></div>
+    <div id="accountArea" class="account-area"><button id="accountButton" class="account-button"><span class="avatar" id="accountAvatar">?</span><span class="account-copy"><strong id="accountName">Guest session</strong><small id="accountHint">Sign in to sync chats</small></span><span>···</span></button></div>
+  </div>
+</aside>
+<main class="main-area">
+  <header class="topbar"><button class="icon-button menu-toggle" id="openSidebar" aria-label="Open menu">☰</button><div class="topbar-title"><span class="online-dot"></span> AI health companion</div><div class="topbar-right"><span class="secure-label">⌑ Private session</span><button class="signin-link" id="signInTop">Sign in</button></div></header>
+  <section class="conversation" id="conversation">
+    <div id="welcome" class="welcome"><div class="welcome-orb">✳</div><div class="eyebrow">A MORE THOUGHTFUL HEALTH EXPERIENCE</div><h1>How can I help<br>you feel better?</h1><p>Share what’s on your mind. I’ll look into it and walk you through what I find.</p>
+      <div class="suggestions"><button class="suggestion" data-prompt="I've had a dry cough and low-grade fever for three days. What should I consider?">Cold and flu symptoms <span>↗</span></button><button class="suggestion" data-prompt="I have a question about how my medications may interact.">Medication question <span>↗</span></button><button class="suggestion" data-prompt="Help me understand what these lab results might mean.">Understand lab results <span>↗</span></button></div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div id="liveActivity" class="live-activity hidden"><div class="activity-heading"><span class="activity-spinner"></span><span id="activityTitle">Getting started</span><span id="livePill" class="live-pill">LIVE</span></div><div class="activity-list" id="activityList"></div></div>
+    <div id="composerDock" class="composer-dock"><div id="attachmentTray" class="attachment-tray hidden"></div><div class="input-modes" role="tablist" aria-label="Choose one input mode"><button id="textMode" class="input-mode active" type="button" aria-selected="true">✎ Text</button><button id="audioMode" class="input-mode" type="button" aria-selected="false">◉ Voice</button></div><div class="composer" id="composer"><input id="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" hidden><button id="attachButton" class="composer-tool" title="Attach a document (up to 4 MB)">＋</button><textarea id="promptInput" rows="1" placeholder="Describe what’s going on…"></textarea><div id="voiceInput" class="voice-input hidden"><button id="recordButton" class="record-button" type="button" aria-label="Start recording">●</button><span id="voiceStatus">Tap to record a voice message</span><span id="voiceDuration"></span></div><div class="composer-actions"><button id="sendButton" class="send-button" aria-label="Send message">↑</button></div></div><div class="composer-hint">AI can make mistakes. For urgent symptoms, contact local emergency services.</div></div>
+  </section>
+</main>
+</div>
+<div id="authModal" class="modal hidden"><div class="modal-card"><button class="modal-close" id="closeAuth">×</button><div class="brand-mark">✳</div><div class="eyebrow">YOUR PERSONAL HEALTH SPACE</div><h2 id="authTitle">Welcome to Clarity</h2><p id="authSubtitle">Sign in to securely save and revisit your conversations.</p><form id="authForm"><label>Email address<input id="authEmail" type="email" placeholder="you@example.com" required></label><label>Password<input id="authPassword" type="password" minlength="8" placeholder="At least 8 characters" required></label><button type="submit" class="auth-submit" id="authSubmit">Sign in</button></form><button id="authSwitch" class="auth-switch">New here? Create an account</button><div id="authFeedback" class="auth-feedback"></div></div></div>
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js?v=20261115-run-close"></script>
+</body></html>

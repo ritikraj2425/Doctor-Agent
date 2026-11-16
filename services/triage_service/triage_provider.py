@@ -1,19 +1,19 @@
-from google.genai import types
-
-from providers.gemini.client import GeminiClient
+from providers.groq.client import GroqClient
 from schemas.triage import TriageResult
 from services.triage_service.safety_rules import SafetyRuleEngine
+from services.diagnosis_service.prompt_context import compact_text
 
 
 class TriageProvider:
     """
     Evaluates clinical urgency for patient cases by combining:
     1. Deterministic regex-based red-flag scanning (instant, no API call).
-    2. Gemini structured classification for nuanced urgency assessment.
+    2. Groq structured classification for nuanced urgency assessment.
     """
 
-    def __init__(self, gemini_client: GeminiClient | None = None):
-        self.gemini_client = gemini_client or GeminiClient()
+    def __init__(self, groq_client: GroqClient | None = None):
+        self.groq_client = groq_client or GroqClient()
+        self.last_provider = "rules"
 
     async def evaluate_triage(
         self,
@@ -65,20 +65,12 @@ Rules:
 - If emergency, provide direct guidance to call emergency services.
 """
 
-        prompt = f"""
-{system_prompt}
-
-Patient Case:
-{structured_prompt}
-"""
-
-        response = await self.gemini_client.generate_content(
-            contents=[prompt],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=TriageResult.model_json_schema(),
-            ),
+        result = await self.groq_client.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=f"Patient case:\n{compact_text(structured_prompt, 1000)}",
+            schema=TriageResult,
+            temperature=0.1,
         )
-
-        return TriageResult.model_validate_json(response.text)
+        self.last_provider = self.groq_client.last_provider
+        return result
 

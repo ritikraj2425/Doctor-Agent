@@ -22,4 +22,5 @@ class UnderstandContextNode:
             "is_medical": context.is_medical,
             "structured_prompt": context.structured_prompt,
             "response": context.response,
+            "context_provider": self.context_provider.groq_provider.client.last_provider,
         }

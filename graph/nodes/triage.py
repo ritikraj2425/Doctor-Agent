@@ -24,5 +24,6 @@ class TriageNode:
             "triage": triage_result.model_dump(),
             "is_emergency": triage_result.is_emergency,
             "urgency_level": triage_result.urgency_level,
+            "triage_provider": self.triage_provider.last_provider,
         }
 

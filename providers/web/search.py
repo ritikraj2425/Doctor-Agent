@@ -28,9 +28,14 @@ class TavilyWebSearchProvider:
         )
 
     async def search(self, query: str) -> list[dict]:
-        return await self.tavily_search.ainvoke(
+        res = await self.tavily_search.ainvoke(
             {
                 "query": query,
                 "include_domains": self.TRUSTED_DOMAINS,
             }
         )
+        if isinstance(res, dict):
+            return res.get("results", [])
+        if isinstance(res, list):
+            return res
+        return []

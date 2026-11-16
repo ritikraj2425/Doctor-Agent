@@ -31,16 +31,23 @@ class ProcessInput:
             "file_type": None,
         }
 
-        audio_path = await FileService().save_file(audio_file) if audio_file and prompt_type == "audio" else None
-        file_path = await FileService().save_file(file) if file else None
+        audio_path = None
+        file_path = None
+        try:
+            audio_path = await FileService().save_file(audio_file) if audio_file and prompt_type == "audio" else None
+            file_path = await FileService().save_file(file) if file else None
+            response["file_path"] = file_path
+            response["file_type"] = file.content_type if file else None
 
-        response["file_path"] = file_path
-        response["file_type"] = file.content_type if file else None
-
-        if prompt_type == "audio" and audio_file is not None:
-            audio_response = await self._speech_processor.process_audio(audio_path)
-            response["prompt"] = audio_response
-        
-        if audio_path:
-            await FileService().delete_file(audio_path)
+            if prompt_type == "audio" and audio_file is not None:
+                transcript = await self._speech_processor.process_audio(audio_path)
+                response["transcription"] = transcript
+                response["prompt"] = f"{prompt}\n\nLatest voice message: {transcript}" if prompt else transcript
+        except Exception:
+            if file_path:
+                await FileService().delete_file(file_path)
+            raise
+        finally:
+            if audio_path:
+                await FileService().delete_file(audio_path)
         return response

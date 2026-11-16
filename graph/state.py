@@ -10,6 +10,7 @@ class DoctorAgentState(TypedDict, total=False):
     prompt: str
     chat_id: str
     prompt_type: str
+    transcription: str | None
 
     file_path: str | None
     file_type: str | None
@@ -22,6 +23,10 @@ class DoctorAgentState(TypedDict, total=False):
     triage: dict
     is_emergency: bool
     urgency_level: str
+    context_provider: str
+    triage_provider: str
+    root_cause_provider: str
+    medication_provider: str
 
     # Research branches
     web_results: list[dict]
@@ -30,6 +35,8 @@ class DoctorAgentState(TypedDict, total=False):
     # Clinical Analysis
     differential: dict
     possible_causes: list[dict]
+    synthesis_fallback: bool
+    synthesis_provider: str
 
     # Medication Verification
     medication_check: dict

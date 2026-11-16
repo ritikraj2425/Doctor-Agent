@@ -1,9 +1,9 @@
 import json
+import re
 
-from google.genai import types
-
-from providers.gemini.client import GeminiClient
+from providers.groq.client import GroqClient, ProviderFallbackError
 from schemas.medication import MedicationCheckResult
+from services.diagnosis_service.prompt_context import compact_text
 
 
 class MedicationVerifier:
@@ -14,8 +14,16 @@ class MedicationVerifier:
     duplicate therapies, or contraindications.
     """
 
-    def __init__(self, gemini_client: GeminiClient | None = None):
-        self.gemini_client = gemini_client or GeminiClient()
+    def __init__(self, groq_client: GroqClient | None = None):
+        self.groq_client = groq_client or GroqClient()
+
+    @staticmethod
+    def _is_rate_limited(error: Exception) -> bool:
+        if isinstance(error, ProviderFallbackError) or getattr(error, "status_code", None) == 429:
+            return True
+        body = getattr(error, "body", None) or {}
+        detail = body.get("error") if isinstance(body, dict) else None
+        return isinstance(detail, dict) and detail.get("code") == "rate_limit_exceeded"
 
     async def verify_medications(
         self,
@@ -44,24 +52,42 @@ Safety Rules:
 - Always encourage confirmation with a licensed pharmacist or prescribing physician.
 """
 
-        prompt = f"""
-{system_prompt}
-
-PATIENT CONTEXT:
-{structured_prompt}
-
-DIFFERENTIAL ANALYSIS CONTEXT:
-{json.dumps(differential_summary or {}, ensure_ascii=False, indent=2)}
-"""
-
-        response = await self.gemini_client.generate_content(
-            contents=[prompt],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=MedicationCheckResult.model_json_schema(),
-                temperature=0.1,
-            ),
+        context = compact_text(structured_prompt, 1000)
+        differential = compact_text(
+            json.dumps(differential_summary or {}, ensure_ascii=False, separators=(",", ":")),
+            800,
         )
 
-        return MedicationCheckResult.model_validate_json(response.text)
+        try:
+            return await self.groq_client.generate_structured(
+                system_prompt=system_prompt,
+                user_prompt=f"""PATIENT CONTEXT:
+{context}
+
+DIFFERENTIAL ANALYSIS CONTEXT:
+{differential}""",
+                schema=MedicationCheckResult,
+                temperature=0.1,
+            )
+        except Exception as exc:
+            if not self._is_rate_limited(exc):
+                raise
+            self.groq_client.last_provider = "local"
+            mentioned = bool(re.search(
+                r"\b(medicat\w*|medicine|drug|tablet|pill|capsule|dose|prescrib\w*|"
+                r"acetaminophen|paracetamol|ibuprofen|aspirin|antibiotic|insulin)\b",
+                structured_prompt,
+                re.IGNORECASE,
+            ))
+            warning = ({
+                "severity": "moderate",
+                "warning_type": "precaution",
+                "message": "Automated medicine safety review was unavailable because the model providers could not complete the request. No medicine or interaction has been verified; ask a pharmacist or clinician before starting, stopping, or combining medicines.",
+            } if mentioned else [])
+            return MedicationCheckResult(
+                has_medication_mention=mentioned,
+                medicines_identified=[],
+                warnings=[warning] if warning else [],
+                pharmacist_note="Automated medication verification was temporarily unavailable. If you take or are considering any medicine, confirm it with a licensed pharmacist or clinician.",
+            )
 

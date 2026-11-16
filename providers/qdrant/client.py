@@ -18,5 +18,5 @@ class QdrantClientProvider:
         self.client = QdrantClient(
             url=url,
             api_key=api_key,
-            timeout=300,
+            timeout=30,
         )

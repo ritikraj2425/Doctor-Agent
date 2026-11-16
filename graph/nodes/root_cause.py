@@ -25,5 +25,6 @@ class RootCauseNode:
         return {
             "differential": differential.model_dump(),
             "possible_causes": [c.model_dump() for c in differential.possible_causes],
+            "root_cause_provider": self.root_cause_provider.groq_client.last_provider,
         }
 

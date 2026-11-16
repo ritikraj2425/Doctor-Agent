@@ -23,5 +23,6 @@ class MedicationVerifierNode:
         return {
             "medication_check": med_result.model_dump(),
             "medicines": [m.model_dump() for m in med_result.medicines_identified],
+            "medication_provider": self.medication_verifier.groq_client.last_provider,
         }
 

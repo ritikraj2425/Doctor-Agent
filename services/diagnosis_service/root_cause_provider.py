@@ -1,9 +1,8 @@
 import json
 
-from google.genai import types
-
-from providers.gemini.client import GeminiClient
+from providers.groq.client import GroqClient
 from schemas.diagnosis import DifferentialAnalysis
+from services.diagnosis_service.prompt_context import compact_sources, compact_text
 
 
 class RootCauseProvider:
@@ -13,8 +12,8 @@ class RootCauseProvider:
     diagnosis with conservative care guidance.
     """
 
-    def __init__(self, gemini_client: GeminiClient | None = None):
-        self.gemini_client = gemini_client or GeminiClient()
+    def __init__(self, groq_client: GroqClient | None = None):
+        self.groq_client = groq_client or GroqClient()
 
     async def generate_differential(
         self,
@@ -41,27 +40,24 @@ Rules:
 - If the evidence is insufficient to identify a condition, explicitly say so.
 """
 
-        prompt = f"""
-{system_prompt}
+        # Search providers can return full page contents. Keep the model input
+        # below the configured Groq TPM budget while retaining all sources in
+        # graph state for the live UI and final evidence links.
+        compact_books = compact_sources(book_results, count=2, excerpt_chars=400)
+        compact_web = compact_sources(web_results, count=2, excerpt_chars=400)
+        context = compact_text(structured_prompt, 1000)
 
-USER CLINICAL CONTEXT:
-{structured_prompt}
+        return await self.groq_client.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=f"""USER CLINICAL CONTEXT:
+{context}
 
 AUTHORITATIVE MEDICAL TEXTBOOK FINDINGS:
-{json.dumps(book_results, ensure_ascii=False, indent=2)}
+{json.dumps(compact_books, ensure_ascii=False, separators=(',', ':'))}
 
 TRUSTED WEB RESEARCH FINDINGS:
-{json.dumps(web_results, ensure_ascii=False, indent=2)}
-"""
-
-        response = await self.gemini_client.generate_content(
-            contents=[prompt],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=DifferentialAnalysis.model_json_schema(),
-                temperature=0.2,
-            ),
+{json.dumps(compact_web, ensure_ascii=False, separators=(',', ':'))}""",
+            schema=DifferentialAnalysis,
+            temperature=0.2,
         )
-
-        return DifferentialAnalysis.model_validate_json(response.text)
 
