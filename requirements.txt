@@ -8,6 +8,7 @@ python-dotenv
 langchain
 langchain-qdrant
 langchain-community
+langchain-tavily
 langchain-cohere
 langchain-text-splitters
 pypdf
